@@ -13,7 +13,7 @@ public static class LocationLakeFilterer
     public static readonly FrozenSet<string> CountryCodesAcceptableWithoutDescription = new[]
     {
         "CX", "CC", "MP", "GU", "EG", "ML", "MG", "PN", "GL", "MN", "KR", "FO", "UG", "KG", "RW", "LB", "RE",
-        "MQ", "NP", "PK", "BY", "UM"
+        "MQ", "NP", "PK", "BY", "UM", "XK"
     }.ToFrozenSet();
 
     public static readonly FrozenSet<string> SubdivisionCodesAcceptableWithoutDescription = new[]
