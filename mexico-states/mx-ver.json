@@ -1,0 +1,34 @@
+{
+  "countryCodes": [
+    "MX"
+  ],
+  "subdivisionInclusions": {
+    "MX": [
+      "MX-VER"
+    ]
+  },
+  "distributionStrategy": {
+    "key": "FixedCountByMaxMinDistance",
+    "locationCountGoal": 50,
+    "minMinDistance": 300
+  },
+  "globalLocationPreferenceFilters": [
+    {
+      "expression": "Buildings100 eq 0 and Roads200 lte 3",
+      "percentage": 90,
+      "locationTag": "rural",
+      "fill": false
+    },
+    {
+      "expression": "*",
+      "percentage": null,
+      "fill": true,
+      "locationTag": "mixed"
+    }
+  ],
+  "output": {
+    "locationTags": [
+      "SubdivisionCode"
+    ]
+  }
+}
