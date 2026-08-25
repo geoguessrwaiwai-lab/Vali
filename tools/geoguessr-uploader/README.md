@@ -32,10 +32,12 @@ GeoGuessrには公開APIがないため、ブラウザの「ログイン済み�
    `.env` は `.gitignore` に登録済みなので、誤ってcommitされることはありません。
 
 ### Cookieの有効期限について
+
 `_ncfa` には有効期限があります。認証エラー(`Not authenticated` 等)が出たら、再度手動でログインし直してCookieを取得し直してください。
 
 ### セキュリティ上の注意
-- `_ncfa` の値は実質的に「あなたのアカウントへのログイン」と同等の権限を持ちます。**他人に共有しない**でください。
+
+- `_ncfa` の値は実質的に「あなたのアカウントへのログイン」と同等の権限を持ちます。**絶対に他人に共有しない**でください。
 - チャット等で一時的に共有した場合は、作業後にGeoGuessr側でログアウト(全セッション無効化)することを推奨します。
 - `.env` や `storage-state.json`(後述)はどちらもgitignore対象です。
 
@@ -57,9 +59,10 @@ node upload-map.mjs --name "MX-JAL" --file ../../mexico-states/mx-jal-locations.
 node upload-map.mjs --name "MX-JAL" --file ../../mexico-states/mx-jal-locations.json --publish
 ```
 
-成功すると、公開マップのURL `https://www.geoguessr.com/maps/<id>` が最後に出力されます。**`--publish` を付けると他people(全体公開)に見える状態になります。** 一度公開すると簡単には取り消せない(非公開に戻す・削除する操作が別途必要)ので、名前やファイル内容を確認してから実行してください。
+成功すると、公開マップのURL `https://www.geoguessr.com/maps/<id>` が最後に出力されます。**`--publish` を付けると自動で全体公開まで進行します。**。
 
 ### 実行後にできること
+
 - 初回実行時、ログイン済みセッションが `storage-state.json` に保存されます。以降は `.env` のCookieがなくても、このファイルがあれば同じセッションを再利用できます(ただし期限切れになったら再取得が必要)。
 - スクリプト実行中にインポート後のスクリーンショットが `last-import-<mapId>.png` として保存されます(確認用)。
 
@@ -76,8 +79,8 @@ node upload-map.mjs --name "MX-JAL" --file ../../mexico-states/mx-jal-locations.
 
 ## ファイル一覧
 
-| ファイル | 用途 |
-|---|---|
-| `upload-map.mjs` | 本体。1マップ分の作成・インポート・(任意で)公開を行うCLI |
-| `.env` | Cookie等の秘匿情報(gitignore対象、各自で作成) |
+| ファイル             | 用途                                                          |
+| -------------------- | ------------------------------------------------------------- |
+| `upload-map.mjs`     | 本体。1マップ分の作成・インポート・(任意で)公開を行うCLI      |
+| `.env`               | Cookie等の秘匿情報(gitignore対象、各自で作成)                 |
 | `storage-state.json` | Playwrightのログインセッション保存先(gitignore対象、自動生成) |
