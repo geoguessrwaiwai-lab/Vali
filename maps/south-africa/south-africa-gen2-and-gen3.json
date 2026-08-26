@@ -1,0 +1,16 @@
+{
+  "countryCodes": [
+    "ZA"
+  ],
+  "distributionStrategy": {
+    "key": "FixedCountByMaxMinDistance",
+    "locationCountGoal": 100,
+    "minMinDistance": 1000
+  },
+  "globalLocationFilter": "Buildings100 eq 0 and Roads200 lte 3 and ResolutionHeight eq 6656",
+  "output": {
+    "locationTags": [
+      "SubdivisionCode"
+    ]
+  }
+}
