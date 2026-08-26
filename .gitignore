@@ -283,19 +283,3 @@ yarn-error.log*
 publish.txt
 **/BenchmarkDotNet.Artifacts/
 src/Vali/Properties/
-
-# GeoGuessr uploader tooling — never commit credentials/session state
-tools/geoguessr-uploader/.env
-tools/geoguessr-uploader/storage-state.json
-tools/geoguessr-uploader/node_modules/
-tools/geoguessr-uploader/*.png
-
-# GeoGuessr tagger tooling (Gen1-4 / hood color)
-tools/geoguessr-tagger/node_modules/
-tools/geoguessr-tagger/label-tool/*.log
-# Scratch images for in-chat visual review — cleaned up when no longer needed
-tools/geoguessr-tagger/_review_tmp/
-# Rendered Street View images + labels — large, derived from Google imagery, stays local
-tools/geoguessr-tagger/label-tool/data/
-# Trained model artifacts — large binary, regenerate from label-tool/data instead of committing
-tools/geoguessr-tagger/models/
