@@ -23,7 +23,7 @@ public static class MapDefinitionDefaults
             CountryCodes = countryCodes,
             Output = definition.Output with
             {
-                PanoIdCountryCodes = MapCountryCodes(definition.Output.PanoIdCountryCodes, definition.DistributionStrategy).Concat(HardcodedPanoIdCountries).Distinct().ToArray(),
+                PanoIdCountryCodes = MapCountryCodes(definition.Output.PanoIdCountryCodes, definition.DistributionStrategy).Concat(HardcodedPanoIdCountries).Append("*").Distinct().ToArray(),
                 CountryHeadingExpressions = ExpandCountryDictionary(definition.Output.CountryHeadingExpressions),
                 CountryPanoVerificationPanning = ExpandCountryDictionary(definition.Output.CountryPanoVerificationPanning),
                 PanoVerificationStrategy = isYearMonthPanoVerificationStrategy
