@@ -283,9 +283,3 @@ yarn-error.log*
 publish.txt
 **/BenchmarkDotNet.Artifacts/
 src/Vali/Properties/
-
-# GeoGuessr uploader tooling — never commit credentials/session state
-tools/geoguessr-uploader/.env
-tools/geoguessr-uploader/storage-state.json
-tools/geoguessr-uploader/node_modules/
-tools/geoguessr-uploader/*.png
