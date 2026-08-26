@@ -3,6 +3,9 @@
 
 appsettings.Development.json
 
+# Local Vali location-lake downloads
+.vali-data/
+
 # Azure Functions localsettings file
 local.settings.json
 
