@@ -77,13 +77,13 @@ function state() {
   return { it, existing };
 }
 
-let current = { gen: null, carView: null, color: null, colorCustom: '', confidence: 'high', notes: '' };
+let current = { gen: 'Gen3', carView: 'back', color: 'Black', colorCustom: '', confidence: 'high', notes: '' };
 
 function resetCurrent(existing) {
   current = {
-    gen: existing.gen || null,
-    carView: existing.carView || null,
-    color: existing.color || null,
+    gen: existing.gen || 'Gen3',
+    carView: existing.carView || 'back',
+    color: existing.color || 'Black',
     colorCustom: existing.colorCustom || '',
     confidence: existing.confidence || 'high',
     notes: existing.notes || '',
@@ -122,8 +122,8 @@ function render() {
       <div class="top">
         <div class="images">
           <div class="primary-views">
-            <figure><img src="/${it.images.front}"><figcaption>Front (yaw 0°)</figcaption></figure>
-            <figure><img src="/${it.images.back}"><figcaption>Back (yaw 180°)</figcaption></figure>
+            <figure><img src="/${it.images.front}"><figcaption>Front (nominal yaw 0°; Gen3 proxy: -20°)</figcaption></figure>
+            <figure><img src="/${it.images.back}"><figcaption>Back (nominal yaw 180°; Gen3 proxy: 120°)</figcaption></figure>
           </div>
           <figure class="fallback"><img src="/${it.images.ground}"><figcaption>Ground — full 360° fallback (use only if car isn't in front/back)</figcaption></figure>
         </div>
@@ -172,7 +172,8 @@ function render() {
 
 function setGen(g) {
   current.gen = g;
-  if (g === 'Small cam') { current.color = null; current.colorCustom = ''; current.carView = 'both'; }
+  if (g === 'Gen3') current.carView = 'back';
+  else if (g === 'Small cam') { current.color = null; current.colorCustom = ''; current.carView = 'both'; }
   syncButtons();
 }
 

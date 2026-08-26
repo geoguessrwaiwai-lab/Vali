@@ -38,6 +38,7 @@ function buildMetaRequestUrl(panoId) {
 
 function parsePanoMessage(msg) {
   const orientation = msg[5][0][1][2]; // [headingDeg, pitchFromZenithDeg, rollDeg]
+  const captureKind = msg[6]?.[5]?.[2];
   return {
     id: msg[1][1],
     lat: msg[5][0][1][0][2],
@@ -50,10 +51,13 @@ function parsePanoMessage(msg) {
     // official Google-driven coverage, or "© <company/agency name>" for third-party
     // (trekker, government, etc.) imagery — this is independent of the capture date.
     copyright: msg[4]?.[0]?.[0]?.[0]?.[0] ?? null,
+    // Google's metadata marks Gen3 trekker coverage as "scout". Keep this as a
+    // first-class field so dataset builders can reject it before downloading tiles.
+    isScout: captureKind === "scout",
   };
 }
 
-// Returns { id, headingDeg, pitchDeg, rollDeg, lat, lon, date } for a Street View panoId,
+// Returns { id, headingDeg, pitchDeg, rollDeg, lat, lon, date, isScout } for a Street View panoId,
 // using the direction the camera vehicle actually faced (not the map-maker's chosen view angle).
 export async function getPanoMeta(panoId) {
   const data = await fetchGoogleJson(buildMetaRequestUrl(panoId));

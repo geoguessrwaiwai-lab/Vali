@@ -14,7 +14,7 @@ async function fetchTile(panoId, x, y, zoom) {
 // zoom levels (a specific tile — commonly the last column — 400s while the rest succeed), so
 // on any tile failure this automatically retries one zoom level down, all the way to zoom=0
 // if needed, rather than failing the whole render.
-async function stitchEquirect(panoId, zoom = 3) {
+export async function stitchEquirect(panoId, zoom = 3) {
   const tilesX = 2 ** zoom;
   const tilesY = Math.ceil(tilesX / 2);
   const tileSize = 512;
@@ -117,6 +117,15 @@ function cropView(equirect, heading, pitch, fov, outW, outH, roll = 0) {
   return sharp(buf, { raw: { width: outW, height: outH, channels: 3 } }).jpeg({ quality: 90 });
 }
 
+// NOTE: an automatic tile-seam detector was tried here (yaw=0/180 sit exactly on a tile
+// boundary — see renderCarViews — and some panoramas, so far only older/Gen3-era ones, have a
+// genuine parallax/exposure mismatch between the two lenses meeting there). Two heuristics
+// were tested against known good/bad renders (a raw color-difference-across-the-middle check,
+// then a local-gradient-spike check) and neither reliably told them apart — the second one
+// even scored a known-bad render LOWER than a known-good one. Reverted rather than ship
+// something that fires unpredictably. When one of front/back lands on a bad seam for a given
+// panorama, use the other one instead — that's the actual mitigation for now.
+
 export async function renderPanoView(panoId, heading, pitch, { fov = 90, outW = 800, outH = 600, zoom = 3, roll = 0 } = {}) {
   const equirect = await stitchEquirect(panoId, zoom);
   return cropView(equirect, heading, pitch, fov, outW, outH, roll);
@@ -138,16 +147,34 @@ export async function renderPanoView(panoId, heading, pitch, { fov = 90, outW = 
 //
 // Default pitch/fov (-20°/80°, not the steeper -30°/100° tried earlier) is a deliberate
 // compromise: older/lower-quality panoramas can have genuinely blank imagery at the deepest
-// nadir (not a bug — Google just never captured it, see renderLocationBundle), and a steeper
+// nadir (not a bug — Google just never captured it, see hasNadirGap below), and a steeper
 // crop reaches far enough down to hit that gap, showing up as a black dome at the bottom of
 // the frame (the pole singularity in the perspective projection turns a flat missing-data
 // edge into a curved one). -20°/80° stays just above where that gap starts for panoramas
 // tested so far, while still framing the hood well on panoramas with full nadir data.
+//
+// yaw=0/180 sit exactly on a tile boundary, and on older/lower-quality panoramas that
+// boundary can be a visibly bad seam (adjacent tiles from different lenses not lining up —
+// see the abandoned seam-detector NOTE near cropView). Trying to score the seam itself
+// pixel-by-pixel proved unreliable, but panoramas from that same older capture era reliably
+// have a detectable side effect: a solid-black gap at the deepest nadir (hasNadirGap). Used
+// here as a proxy: when present, both views are nudged off their exact tile boundaries. For
+// `front`, -20° was selected after comparing -60/-45/-20/+20/+45/+70°: it keeps the road
+// naturally framed without the larger rotation used by -45°. For `back`, -60° (yaw=120,
+// not 180) was checked across the same panoramas and consistently showed a clean,
+// well-composed hood shot, unlike smaller offsets (25°) or other candidates (45°/90°),
+// which still hit visible seams on some of them. Gen4 panoramas (no gap) are unaffected.
+const NADIR_GAP_FRONT_YAW_OFFSET = -20;
+const NADIR_GAP_BACK_YAW_OFFSET = -60;
+
 export async function renderCarViews(panoId, { pitch = -20, fov = 80, outW = 900, outH = 700, zoom = 3, roll = 0 } = {}) {
   const equirect = await stitchEquirect(panoId, zoom);
+  const hasGap = hasNadirGap(equirect);
+  const frontYaw = hasGap ? NADIR_GAP_FRONT_YAW_OFFSET : 0;
+  const backYaw = 180 + (hasGap ? NADIR_GAP_BACK_YAW_OFFSET : 0);
   return {
-    front: cropView(equirect, 0, pitch, fov, outW, outH, roll),
-    back: cropView(equirect, 180, pitch, fov, outW, outH, roll),
+    front: cropView(equirect, frontYaw, pitch, fov, outW, outH, roll),
+    back: cropView(equirect, backYaw, pitch, fov, outW, outH, roll),
   };
 }
 
@@ -169,6 +196,29 @@ export async function renderViews(panoId, views, { outW = 900, outH = 700, zoom 
 function pitchToRow(pitchDeg, eqH) {
   const lat = (-pitchDeg * Math.PI) / 180;
   return Math.round((lat / Math.PI + 0.5) * eqH);
+}
+
+// Older/lower-quality panoramas often have no imagery at all at the deepest nadir (Google
+// just never captured directly beneath the vehicle) — a solid black region visible in the
+// raw tiles, confirmed by inspecting them directly. Unlike the tile-seam mismatch (tried and
+// abandoned — see the NOTE near cropView), this is trivial to detect reliably: sample pixels
+// in the deep-nadir band and check how many are pure black. Used as a proxy for "this
+// panorama is old/Gen3-tier capture quality" — that same lower-quality capture era is where
+// the seam problem has shown up too, so panoramas with this gap get a small yaw nudge on
+// front/back to move off the exactly-on-a-tile-boundary position (see renderCarViews).
+export function hasNadirGap(equirect) {
+  const { data, width: eqW, height: eqH, channels } = equirect;
+  const rowStart = Math.min(pitchToRow(-70, eqH), pitchToRow(-89, eqH));
+  const rowEnd = Math.max(pitchToRow(-70, eqH), pitchToRow(-89, eqH));
+  let black = 0, total = 0;
+  for (let y = rowStart; y < rowEnd; y += 4) {
+    for (let x = 0; x < eqW; x += 8) {
+      const idx = (y * eqW + x) * channels;
+      if (data[idx] < 10 && data[idx + 1] < 10 && data[idx + 2] < 10) black++;
+      total++;
+    }
+  }
+  return total > 0 && black / total > 0.3;
 }
 
 // Crops a full 360°-wide horizontal band out of the raw equirectangular panorama, covering
@@ -253,9 +303,12 @@ export async function renderOverview(panoId, { outW = 1200, outH = 600, zoom = 3
 // imagery at the deepest nadir, which shows up as a black gap in the band.
 export async function renderLocationBundle(panoId, { zoom = 3, pitch = -20, fov = 80 } = {}) {
   const equirect = await stitchEquirect(panoId, zoom);
+  const hasGap = hasNadirGap(equirect);
+  const frontYaw = hasGap ? NADIR_GAP_FRONT_YAW_OFFSET : 0;
+  const backYaw = 180 + (hasGap ? NADIR_GAP_BACK_YAW_OFFSET : 0);
   return {
-    front: cropView(equirect, 0, pitch, fov, 900, 700, 0),
-    back: cropView(equirect, 180, pitch, fov, 900, 700, 0),
+    front: cropView(equirect, frontYaw, pitch, fov, 900, 700, 0),
+    back: cropView(equirect, backYaw, pitch, fov, 900, 700, 0),
     ground: cropBand(equirect, { pitchTop: -5, pitchBottom: -90, outW: 1800, outH: 340 }),
     sky: cropBand(equirect, { pitchTop: 60, pitchBottom: 0, outW: 1800, outH: 300 }),
     watermark: cropWatermark(equirect),

@@ -40,7 +40,7 @@ npm install
 3. ところがこの帯方式には別の問題がありました: (a) equirect投影の歪みで車が曲がった筋状パターンになり視覚的に解釈しづらい、(b) 古い/低品質なパノラマは**真下(nadir)付近のデータをGoogleが元々持っておらず**(バグではなく、単に未撮影)、車が写るはずの位置が黒塗りになることがある。
 4. heading/roll補正が正しくできるようになった今、front/back(`renderCarViews`と同等の透視図)の方が実際のGoogle Mapビューアーで見るのと同じ自然な形で車が写るため、**front/backをメインに戻し、360°帯(`ground`)は前後どちらにも車が写らない場合の保険**として残す構成にしました。
 
-- `front`/`back`(真の進行方向とその180°反対、pitch -30°): 車のボンネットが自然な形で写る、メインで確認する画像
+- `front`/`back`(基準は真の進行方向とその180°反対、pitch -20°): 車のボンネットが自然な形で写る、メインで確認する画像。真下に欠損があるGen3相当の画像では、タイル境界を避けるためfrontを-20°、backを-60°ずらす
 - `ground`帯(pitch -5°〜-90°、フォールバック): front/backどちらにも車が見当たらない場合の保険。車が写る可能性のある領域をヘディング問わず丸ごと含む
 - `sky`帯(pitch 0°〜60°): 太陽・ハレーション・空の色など、Gen1/Gen2判定や全体の鮮明さ確認に使う領域を丸ごと含む(`capture-locations.mjs`では現在未使用、ラベリングツールでは過去に使用)
 
@@ -90,6 +90,17 @@ node capture-for-labeling.mjs candidates.json ./data
 node server.mjs ./data
 # → http://localhost:4173 でラベリング
 ```
+
+既知のGen3地域（ウクライナ、韓国、レソト、エスワティニ、ブータン、ボリビア、ウルグアイ）だけを別バッチで収集する場合:
+
+```bash
+node gather-candidates.mjs label-tool/gen3-country-candidates.json --countries=UA,KR,LS,SZ,BT,BO,UY --radius=500
+cd label-tool
+node capture-for-labeling.mjs gen3-country-candidates.json ./data --append --preset-gen=Gen3
+```
+
+候補検索時にGoogleメタデータの`scout`フラグを確認し、Gen3トレッカーは画像取得前に自動除外します。
+既知の世代は`labels.json`へGen3として設定されます。車体色は画像レビュー時に追記できます。
 
 ラベリングツールは各地点について **Front/Back(真の進行方向とその180°反対、メイン)** と **Ground(360°帯、フォールバック)** を表示します。front/backに車が写っていない稀なケースでは、Groundを参考にしてください。
 
