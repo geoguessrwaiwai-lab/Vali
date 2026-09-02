@@ -9,7 +9,7 @@
   "distributionStrategy": {
     "key": "FixedCountByMaxMinDistance",
     "locationCountGoal": 1000000,
-    "minMinDistance": 25,
+    "minMinDistance": 200,
     "treatCountriesAsSingleSubdivision": [
       "AD", "AT", "AU", "AX", "BE", "BR", "CA", "CH", "CZ", "DE",
       "DK", "ES", "FI", "FR", "GB", "GR", "HK", "HU", "IE", "IL",
